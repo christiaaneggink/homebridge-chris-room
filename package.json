@@ -1,0 +1,24 @@
+{
+  "name": "homebridge-chris-room",
+  "version": "1.0.0",
+  "description": "Chris Room Accessory Plugin for HomeBridge",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/christiaaneggink/homebridge-chris-room.git"
+  },
+  "keywords": [
+    "homebridge",
+    "homebridge-plugin",
+    "mqtt"
+  ],
+  "author": "Christiaan Eggink",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/christiaaneggink/homebridge-chris-room/issues"
+  },
+  "homepage": "https://github.com/christiaaneggink/homebridge-chris-room#readme"
+}
