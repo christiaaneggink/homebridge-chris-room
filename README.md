@@ -3,7 +3,7 @@ Chris Room Accessory Plugin for HomeBridge
 
 Installation
 --------------------
-    sudo npm install -g homebridge-mqtt-humidity
+    sudo npm install -g homebridge-chris-room
 
 
 Sample HomeBridge Configuration
