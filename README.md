@@ -22,7 +22,7 @@ Sample HomeBridge Configuration
         {
           "accessory": "chris-room",
           "name": "Living Room",
-          "url": "mqtt://10.0.0.9",
+          "url": "mqtt://10.0.1.9",
           "topic_t": "home/livingroom/temperature",
           "topic_h": "home/livingroom/humidity",
           "topic_a": "home/livingroom/airquality",
