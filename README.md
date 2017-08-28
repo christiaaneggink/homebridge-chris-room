@@ -19,7 +19,7 @@ Sample HomeBridge Configuration
       "description": "",
 
       "accessories": [
-				{
+        {
           "accessory": "chris-room",
           "name": "Living Room",
           "url": "mqtt://10.0.0.9",
@@ -29,7 +29,7 @@ Sample HomeBridge Configuration
           "username": "username",
           "password": "password",
           "serial": "HMH-54D3X"
-				}
+        }
       ],
 
       "platforms": []
