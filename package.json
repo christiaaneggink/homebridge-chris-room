@@ -1,6 +1,6 @@
 {
   "name": "homebridge-chris-room",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Chris Room Accessory Plugin for HomeBridge",
   "main": "index.js",
   "scripts": {
