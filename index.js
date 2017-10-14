@@ -12,19 +12,25 @@ Remember to add accessory to config.json. Example:
         "topic_t": "home/livingroom/temperature",
         "topic_h": "home/livingroom/humidity",
         "topic_a": "home/livingroom/airquality",
+        "topic_tvoc": "home/livingroom/tvoc",
+        "topic_co2": "home/livingroom/co2",
         "topic_batt_chg": "home/livingroom/batt_charging",
         "topic_batt_lvl": "home/livingroom/batt_level",
         "topic_batt_low": "home/livingroom/batt_low",
-        "username": "username",
-        "password": "password",
+        "mysql_prefix": "livingroom",
+        "mysql_host": "localhost",
+        "mysql_user": "********",
+        "mysql_pwd": "********",
+        "mysql_db": "********",
         "serial": "CR001-001"
-	}
+	  }
 ],
 
 */
 
 var Service, Characteristic;
 var mqtt = require('mqtt');
+var mysql = require('mysql');
 
 module.exports = function(homebridge) {
   Service = homebridge.hap.Service;
@@ -34,49 +40,47 @@ module.exports = function(homebridge) {
 
 function ChrisRoomAccessory(log, config) {
   this.log = log;
-  this.name = config["name"];
+  this.name = config['name'];
   this.url = config['url'];
+  this.table_prefix = config['mysql_prefix'];
   this.topic_t = config['topic_t'];
   this.topic_h = config['topic_h'];
   this.topic_a = config['topic_a'];
+  this.topic_tvoc = config['topic_tvoc'];
+  this.topic_co2 = config['topic_co2'];
   this.topic_batt_chg = config['topic_batt_chg'];
   this.topic_batt_lvl = config['topic_batt_lvl'];
   this.topic_batt_low = config['topic_batt_low'];
-  this.client_Id = 'mqttjs_' + Math.random().toString(16).substr(2, 8);
-  this.options = {
-    keepalive: 10,
-    clientId: this.client_Id,
-    protocolId: 'MQTT',
-    protocolVersion: 4,
-    clean: true,
-    reconnectPeriod: 1000,
-    connectTimeout: 30 * 1000,
-    serialnumber: config["serial"] || this.client_Id,
-    will: {
-      topic: 'WillMsg',
-      payload: 'Connection Closed abnormally..!',
-      qos: 0,
-      retain: false
-    },
-    username: config["username"],
-    password: config["password"],
-    rejectUnauthorized: false
-  };
+  this.serial = config['serial'];
 
   this.service_t = new Service.TemperatureSensor(this.name);
   this.service_h = new Service.HumiditySensor(this.name);
   this.service_a = new Service.AirQualitySensor(this.name);
   this.service_b = new Service.BatteryService(this.name);
   
-  this.client = mqtt.connect(this.url, this.options);  
+  this.client = mqtt.connect(this.url);  
   this.client.subscribe(this.topic_t);
   this.client.subscribe(this.topic_h);
   this.client.subscribe(this.topic_a);
+  this.client.subscribe(this.topic_tvoc);
+  this.client.subscribe(this.topic_co2);
   this.client.subscribe(this.topic_batt_chg);
   this.client.subscribe(this.topic_batt_lvl);
   this.client.subscribe(this.topic_batt_low);
 
+  this.con = mysql.createConnection({
+    host: config['mysql_host'],
+    user: config['mysql_user'],
+    password: config['mysql_pwd'],
+    database: config['mysql_db']
+  });
+
+  this.con.connect(function(err) {
+    if (err) throw err;
+  });
+
   var that = this;
+
   this.client.on('message', function (topic, message) {
   
     data = JSON.parse(message);
@@ -85,7 +89,7 @@ function ChrisRoomAccessory(log, config) {
     // Temperature
     if (topic.indexOf('/temperature') !== -1) {
       that.temperature = parseFloat(data);
-      that.log(that.name, "- MQTT (temperature): ", that.temperature);
+      that.storeMySQL(that, 'temperature', that.temperature);
       that.service_t
         .setCharacteristic(Characteristic.CurrentTemperature, that.temperature);    
     }
@@ -93,7 +97,7 @@ function ChrisRoomAccessory(log, config) {
     // Humidity
     if (topic.indexOf('/humidity') !== -1) {
       that.humidity = parseFloat(data);
-      that.log(that.name, "- MQTT (humidity): ", that.humidity);
+      that.storeMySQL(that, 'humidity', that.humidity);
       that.service_h
         .setCharacteristic(Characteristic.CurrentRelativeHumidity, that.humidity);    
     }
@@ -101,15 +105,27 @@ function ChrisRoomAccessory(log, config) {
     // Air Quality
     if (topic.indexOf('/airquality') !== -1) {
       that.airquality = parseFloat(data);
-      that.log(that.name, "- MQTT (air quality): ", that.airquality);
+      that.storeMySQL(that, 'airquality', that.airquality);
       that.service_a
         .setCharacteristic(Characteristic.AirQuality, that.airquality);    
+    }
+
+    // Total Volatile Organic Compounds (TVOC)
+    if (topic.indexOf('/tvoc') !== -1) {
+      that.tvoc = parseFloat(data);
+      that.storeMySQL(that, 'tvoc', that.tvoc);  
+    }
+
+    // Carbon Dioxide
+    if (topic.indexOf('/co2') !== -1) {
+      that.co2 = parseFloat(data);
+      that.storeMySQL(that, 'co2', that.co2);  
     }
 
     // Battery Charging
     if (topic.indexOf('/batt_charging') !== -1) {
       that.batt_chg = parseFloat(data);
-      that.log(that.name, "- MQTT (battery charging): ", that.batt_chg);
+      //that.log(that.name, "- MQTT (battery charging): ", that.batt_chg);
       that.service_b
         .setCharacteristic(Characteristic.ChargingState, that.batt_chg);    
     }
@@ -117,7 +133,7 @@ function ChrisRoomAccessory(log, config) {
     // Battery Level
     if (topic.indexOf('/batt_level') !== -1) {
       that.batt_lvl = parseFloat(data);
-      that.log(that.name, "- MQTT (battery level): ", that.batt_lvl);
+      //that.log(that.name, "- MQTT (battery level): ", that.batt_lvl);
       that.service_b
         .setCharacteristic(Characteristic.BatteryLevel, that.batt_lvl);    
     }
@@ -125,7 +141,7 @@ function ChrisRoomAccessory(log, config) {
     // Battery Status Low
     if (topic.indexOf('/batt_low') !== -1) {
       that.batt_low = parseFloat(data);
-      that.log(that.name, "- MQTT (battery status low): ", that.batt_low);
+      //that.log(that.name, "- MQTT (battery status low): ", that.batt_low);
       that.service_b
         .setCharacteristic(Characteristic.StatusLowBattery, that.batt_low);    
     }
@@ -192,7 +208,14 @@ ChrisRoomAccessory.prototype.getServices = function() {
   informationService
     .setCharacteristic(Characteristic.Manufacturer, "Christiaan Eggink")
     .setCharacteristic(Characteristic.Model, "Chris Room")
-    .setCharacteristic(Characteristic.SerialNumber, this.options["serialnumber"]);
+    .setCharacteristic(Characteristic.SerialNumber, this.serial);
 
   return [informationService, this.service_t, this.service_h, this.service_a, this.service_b];
+}
+
+ChrisRoomAccessory.prototype.storeMySQL = function(that, table, val) {
+  var sql = "INSERT INTO " + that.table_prefix + "_" + table + " (`value`) VALUES ('" + val + "')";
+  that.con.query(sql, function (err, result) {
+    if (err) throw err; 
+  });
 }

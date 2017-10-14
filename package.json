@@ -1,6 +1,6 @@
 {
   "name": "homebridge-chris-room",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Chris Room Accessory Plugin for HomeBridge",
   "main": "index.js",
   "scripts": {
@@ -12,7 +12,8 @@
   },
   "bundleDependencies": false,
   "dependencies": {
-    "mqtt": "^1.12.0"
+    "mqtt": "^1.12.0",
+    "mysql": "^2.12.0"
   },
   "deprecated": false,
   "repository": {
@@ -22,7 +23,8 @@
   "keywords": [
     "homebridge",
     "homebridge-plugin",
-    "mqtt"
+    "mqtt",
+    "mysql"
   ],
   "author": "Christiaan Eggink",
   "license": "MIT",
